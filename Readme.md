@@ -859,3 +859,353 @@ this is complex as it needs conflict management
 ## Replication with MySQL
 
 Replication is quite hard to implement and it's syntax differes from DBMS to the other
+
+# Database Engines
+
+simply, a database engine has the idea of a library that can be injected into the DBMS to do the CRUD operations implementations
+
+## MyISAM
+
+it is a storage engine for MySQL with the following properties:
+
+1. **Table-Level Locking** – Locks the entire table during insert, update, or delete operations, making it less suitable for high-concurrency applications.
+2. **No Foreign Key Constraints** – MyISAM does not support foreign keys, making it less suitable for maintaining strict relational integrity.
+3. **No Transactions** – It lacks support for ACID transactions (Atomicity, Consistency, Isolation, Durability), making it less reliable for critical applications.
+4. **Fast Reads, Slow Writes** – Optimized for read-heavy operations but slower for writes due to table-level locking.
+5. **Full-Text Search** – Supports full-text indexing, making it useful for search-heavy applications.
+6. **Crash Recovery Issues** – Susceptible to corruption and lacks built-in crash recovery mechanisms like InnoDB.
+7. **Compact Storage** – MyISAM tables generally take up less disk space compared to InnoDB.
+8. **Manual Repair Needed** – If a table gets corrupted, `REPAIR TABLE` must be used to fix it manually.
+9. **No Row-Level Locking** – Entire table locks make concurrent updates inefficient.
+10. **Uses `.MYD`, `.MYI`, and `.frm` Files** – Stores data in `.MYD` files, indexes in `.MYI`, and table definitions in `.frm`.
+
+Due to its limitations, MyISAM has been largely replaced by **InnoDB**, which offers better concurrency, transactions, and crash recovery.
+
+## **InnoDB**
+
+it is the default storage engine for MySQL, offering strong reliability, performance, and data integrity. Here are its key properties:
+
+1. **Row-Level Locking** – Supports concurrent writes by locking only the affected rows instead of the entire table.
+2. **ACID Compliance** – Supports transactions with **Atomicity, Consistency, Isolation, and Durability (ACID)**, ensuring data integrity.
+3. **Foreign Key Support** – Enforces **referential integrity** through foreign key constraints.
+4. **Crash Recovery** – Uses a **redo log** and automatic recovery mechanism to restore data after a crash.
+5. **MVCC (Multi-Version Concurrency Control)** – Allows non-blocking reads, improving performance in concurrent environments.
+6. **Supports Transactions** – Implements **commit, rollback, and savepoint** features.
+7. **Uses a Clustered Index** – Data is stored in a **B+Tree structure**, optimizing primary key lookups.
+8. **Better Write Performance** – Optimized for mixed read/write operations due to row-level locking.
+9. **Larger Storage Overhead** – Requires more disk space than MyISAM due to transactional logs and indexing.
+10. **Uses `.ibd` and `.frm` Files** – Stores data and indexes in a single `.ibd` file (if **file-per-table** is enabled) and table definitions in `.frm`.
+
+### **When to Use InnoDB?**
+
+- When **transactions** are required.
+- When ensuring **data integrity** via foreign keys.
+- For **high-concurrency applications** with frequent writes.
+
+### **Comparison with MyISAM**
+
+| Feature           | InnoDB            | MyISAM           |
+| ----------------- | ----------------- | ---------------- |
+| Locking Mechanism | Row-level         | Table-level      |
+| Transactions      | ✅ Yes            | ❌ No            |
+| Foreign Keys      | ✅ Yes            | ❌ No            |
+| Performance       | Better for writes | Better for reads |
+| Crash Recovery    | ✅ Yes            | ❌ No            |
+| Storage           | Larger footprint  | Compact          |
+
+InnoDB is the **recommended** choice for most modern MySQL applications due to its reliability and performance advantages.
+
+## SQLite
+
+it is a lightweight, self-contained database engine designed for embedded systems, mobile apps, and small-scale applications. Here are its key properties:
+
+### **1. Serverless & Self-Contained**
+
+- Unlike MySQL or PostgreSQL, **SQLite is serverless**—it doesn’t run as a separate process but as a library linked within an application.
+- The entire database is stored in a **single file** on disk.
+
+### **2. Zero Configuration**
+
+- No need for setup, user authentication, or configuration files.
+- Easy to deploy; just include the SQLite library.
+
+### **3. ACID Compliance**
+
+- Supports **Atomicity, Consistency, Isolation, and Durability (ACID)** via rollback journals or Write-Ahead Logging (WAL).
+
+### **4. Lightweight & Fast**
+
+- Designed for **small to medium-sized** applications with low resource consumption.
+- Read operations are fast, but write performance is limited by single-writer concurrency.
+
+### **5. Single-File Storage**
+
+- The entire database (tables, indexes, and data) is stored in a single `.sqlite` file.
+- This makes it easy to copy, backup, and distribute.
+
+### **6. No User Management**
+
+- Unlike MySQL or PostgreSQL, **SQLite has no built-in user authentication** or role-based access control (RBAC).
+- Security must be handled at the application level.
+
+### **7. Limited Concurrency**
+
+- **Single-writer, multiple-reader model** – multiple processes can read, but only one can write at a time.
+- Suitable for **low-concurrency applications**, but not ideal for high-write workloads.
+
+### **8. No Native Network Access**
+
+- SQLite doesn’t have a built-in client-server model.
+- To access SQLite remotely, you need an external wrapper like **LiteFS** or use it with a web API.
+
+### **9. No Strict Type Enforcements**
+
+- SQLite uses **dynamic typing**, meaning a column can store any type of data regardless of its declared type.
+- This provides flexibility but can lead to **data inconsistency** if not managed properly.
+
+### **10. Built-in Full-Text Search (FTS)**
+
+- Supports **full-text search (FTS5)**, making it great for local search applications.
+
+---
+
+### **When to Use SQLite?**
+
+✅ **Mobile Apps** – Used in **Android & iOS** (via Room, Core Data, etc.).  
+✅ **Embedded Systems** – Ideal for IoT devices, sensors, and offline applications.  
+✅ **Small Websites & Local Storage** – Suitable for blogs, caching, and config storage.  
+✅ **Prototyping & Testing** – Quick setup for testing database-driven applications.
+
+### **Comparison with MySQL & InnoDB**
+
+| Feature        | SQLite                     | MySQL (InnoDB)                  |
+| -------------- | -------------------------- | ------------------------------- |
+| Architecture   | Serverless                 | Client-Server                   |
+| Concurrency    | Limited                    | High                            |
+| Transactions   | ✅ Yes                     | ✅ Yes                          |
+| Foreign Keys   | ✅ Yes (since 3.6.19)      | ✅ Yes                          |
+| Performance    | Fast reads, limited writes | Better for high concurrency     |
+| Storage        | Single-file `.sqlite`      | Multiple files (`.ibd`, `.frm`) |
+| Scalability    | Limited                    | Highly scalable                 |
+| Network Access | ❌ No                      | ✅ Yes                          |
+
+**Bottom Line:**  
+SQLite is **simple, lightweight, and great for embedded or local applications** but lacks the scalability and concurrency of MySQL/InnoDB.
+
+## LevelDB
+
+it is a fast key-value storage engine developed by **Google**. It is optimized for **fast reads and writes** using an **LSM (Log-Structured Merge) tree** architecture. Unlike traditional relational databases, **LevelDB is not SQL-based** and does not support tables, indexes, or transactions.
+
+---
+
+### **Key Properties of LevelDB**
+
+1. **Key-Value Storage**
+
+   - Stores data as **key-value pairs**, similar to **Redis** or **RocksDB**.
+   - Keys and values are arbitrary **byte arrays**, meaning you can store anything (numbers, strings, binary data).
+
+2. **LSM-Tree Based**
+
+   - Uses **Log-Structured Merge (LSM) trees** instead of B-Trees (used in MySQL/InnoDB).
+   - Optimized for **high write throughput** and minimizes disk writes.
+
+3. **Ordered Storage**
+
+   - Keys are stored **in sorted order**, making **range queries efficient**.
+   - Supports **prefix scans** and **iterators** to traverse data efficiently.
+
+4. **High Write Performance**
+
+   - Writes are **batched** and stored in an **append-only log (memtable)** before being merged into disk (SSTable).
+   - Ideal for applications with **high write workloads**.
+
+5. **No SQL, No Schema**
+
+   - Unlike MySQL or SQLite, **LevelDB is not a relational database**.
+   - No tables, no columns—just raw key-value storage.
+
+6. **Atomic Writes & Snapshots**
+
+   - Supports **atomic batch writes** but not full ACID transactions.
+   - Snapshots allow **point-in-time consistent reads**.
+
+7. **Compression Support**
+
+   - Uses **Snappy compression** to reduce storage space and improve performance.
+
+8. **Limited Concurrency**
+
+   - **Single-process access** (only one process can access a LevelDB database at a time).
+   - Supports multiple **concurrent reads** but only **one writer** at a time.
+
+9. **No Native Replication or Sharding**
+
+   - Unlike MySQL, LevelDB does not have **built-in replication** or **sharding**.
+   - Can be scaled using external tools like **RocksDB** (a more advanced fork).
+
+10. **File-Based Storage**
+
+- Stores data in multiple **SSTable** (Sorted String Table) files on disk.
+- Uses a **WAL (Write-Ahead Log)** for crash recovery.
+
+---
+
+### **When to Use LevelDB?**
+
+✅ **Embedded Databases** – Great for local storage in browsers, mobile apps, and desktop applications.  
+✅ **Caching** – Used in **Chrome, Firefox, and Android** for caching.  
+✅ **Blockchain & Distributed Systems** – Used in **Bitcoin Core** and **Ethereum** for fast key-value lookups.  
+✅ **High Write Applications** – Ideal for logging systems and time-series data.  
+✅ **Key-Value Stores** – Good for applications that don’t need relational data.
+
+---
+
+### **Comparison with Other Databases**
+
+| Feature      | LevelDB                     | SQLite                    | MySQL (InnoDB)           |
+| ------------ | --------------------------- | ------------------------- | ------------------------ |
+| Data Model   | Key-Value Store             | Relational (SQL)          | Relational (SQL)         |
+| Architecture | Embedded                    | Embedded                  | Client-Server            |
+| Concurrency  | Single-writer, multi-reader | Limited write concurrency | High concurrency         |
+| Transactions | Atomic batch writes         | ACID transactions         | ACID transactions        |
+| Performance  | High writes, fast reads     | Moderate                  | Optimized for high loads |
+| Storage      | LSM-Tree (SSTables)         | Single-file `.sqlite`     | B+Tree (Clustered Index) |
+| Scalability  | Limited (single process)    | Limited                   | High scalability         |
+
+---
+
+### **Bottom Line:**
+
+**LevelDB is a fast, embedded key-value store optimized for high write performance** but lacks SQL features, multi-process concurrency, and built-in replication. If you need a lightweight, fast database for **caching, blockchain, or embedded storage**, LevelDB is a great choice!
+
+## RocksDB
+
+it is an advanced key-value storage engine developed by **Facebook**, built on top of **LevelDB** but optimized for better performance, scalability, and efficiency. It is designed for high-throughput, low-latency applications and is widely used in databases, distributed systems, and real-time analytics.
+
+---
+
+### **Key Properties of RocksDB**
+
+1. **Key-Value Storage**
+
+   - Stores **key-value pairs** where both keys and values are **byte arrays**.
+   - Supports **arbitrary data types** (strings, numbers, JSON, binary blobs).
+
+2. **LSM-Tree (Log-Structured Merge Tree) Architecture**
+
+   - Optimized for write-heavy workloads using an **append-only** log-based structure.
+   - Reduces disk I/O by **batching writes** and flushing them in compacted **Sorted String Table (SSTable) files**.
+
+3. **High Write & Read Performance**
+
+   - Uses **multi-threaded compaction** for efficient data merging.
+   - Supports **block-based caching** to speed up reads.
+   - Optimized for **SSD storage** and large datasets.
+
+4. **Better Concurrency Than LevelDB**
+
+   - Supports **multiple concurrent writers**, unlike LevelDB (which allows only one).
+   - Uses **fine-grained locking** to improve parallelism.
+
+5. **Column Families**
+
+   - Supports multiple **column families**, similar to **tables in relational databases**.
+   - Allows **isolation of different data types** within a single database.
+
+6. **Transactions & Atomic Writes**
+
+   - Supports **ACID-compliant transactions** (unlike LevelDB, which only supports atomic batch writes).
+   - Provides **snapshot isolation** for consistent reads.
+
+7. **Compression & Space Efficiency**
+
+   - Uses **Snappy, ZSTD, or LZ4 compression** to reduce storage costs.
+   - Supports **prefix compression** to speed up range queries.
+
+8. **Efficient Range Queries & Iteration**
+
+   - Data is stored in **sorted order**, allowing **fast range queries**.
+   - Optimized iterators for **prefix and range scans**.
+
+9. **Replication & Sharding Support**
+
+   - Used in distributed databases like **TiDB, CockroachDB, YugabyteDB**.
+   - Supports **log shipping** and **custom replication strategies**.
+
+10. **Persistent & Embedded Storage**
+
+- Can be used as an **embedded database** (similar to SQLite).
+- Also serves as **persistent storage for distributed databases**.
+
+---
+
+### **When to Use RocksDB?**
+
+- **High-Performance Databases** – Used in NoSQL databases (e.g., **TiDB, Apache Cassandra, CockroachDB**).
+- **Streaming & Logging** – Great for real-time logging, analytics, and event processing.
+- **Blockchain & Cryptocurrency** – Used in **Bitcoin, Ethereum, Hyperledger** for storing blockchain data.
+- **Embedded Databases** – Used in **Kafka Streams, Flink, and Elasticsearch** for key-value storage.
+- **Cache & SSD-Based Storage** – Optimized for fast access in **SSD-backed** applications.
+
+---
+
+### **Comparison: RocksDB vs LevelDB vs SQLite vs MySQL**
+
+| Feature           | RocksDB                       | LevelDB         | SQLite           | MySQL (InnoDB)   |
+| ----------------- | ----------------------------- | --------------- | ---------------- | ---------------- |
+| Data Model        | Key-Value Store               | Key-Value Store | Relational (SQL) | Relational (SQL) |
+| Architecture      | Embedded                      | Embedded        | Embedded         | Client-Server    |
+| Write Performance | High                          | Moderate        | Low-Medium       | Medium           |
+| Read Performance  | High                          | High            | Medium           | High             |
+| Transactions      | Yes (ACID)                    | No              | Yes              | Yes              |
+| Concurrency       | Multi-threaded                | Single-writer   | Limited          | High             |
+| Compression       | Yes (Snappy, ZSTD)            | Yes (Snappy)    | No               | Yes              |
+| Scalability       | High (Replication & Sharding) | Low             | Low              | High             |
+
+---
+
+### **Bottom Line**
+
+RocksDB is a high-performance, embeddable key-value store optimized for fast writes, high concurrency, and efficient storage.  
+It is an improved version of LevelDB, designed for use in distributed databases, real-time analytics, and big data applications.
+
+## DBMS by indexing DS
+
+just this image
+
+![alt text](image-8.png)
+
+# Security
+
+- use SSL communication encryption
+
+- each table/partition has many users where each user can only do one very scoped task
+
+# homophoric encryption
+
+it is still relatively new and has huge performance trade-offs, it is about encryption algorithm that can do operations without the need for decryption as long as the arguments are encrypted using the same algorithms and keys
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+---
+
+# THE END
+
+that's it, thanks for reaching so far
